@@ -115,7 +115,7 @@ def _probe_duration(video_path: Path) -> float:
 
             if stream_durations:
                 return max(stream_durations)
-    except av.AVError as exc:  # pragma: no cover - depends on media input
+    except av.error.Error as exc:  # pragma: no cover - depends on media input
         raise RuntimeError(f"Unable to open video for probing: {video_path}") from exc
 
     return 0.0
