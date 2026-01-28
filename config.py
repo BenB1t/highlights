@@ -11,20 +11,22 @@ class AudioConfig:
     """Parameters that drive loudness profiling and peak detection."""
 
     sample_rate: int = 22050
-    smoothing_window_s: float = 3.0
-    peak_percentile_low: float = 0.90
-    peak_percentile_high: float = 0.97
-    min_peak_gap_s: float = 60.0
+    smoothing_window_s: float = 1.5
+    peak_percentile_low: float = 0.85
+    peak_percentile_high: float = 0.95
+    min_peak_gap_s: float = 20.0
+    penalty_gap_s: float = 8.0
+    open_play_gap_s: float = 25.0
 
 
 @dataclass(slots=True)
 class ClipWindowConfig:
     """Controls how far before/after a peak each clip spans."""
 
-    min_pre_peak_s: float = 12.0
-    max_pre_peak_s: float = 20.0
-    min_post_peak_s: float = 6.0
-    max_post_peak_s: float = 10.0
+    min_pre_peak_s: float = 8.0
+    max_pre_peak_s: float = 15.0
+    min_post_peak_s: float = 4.0
+    max_post_peak_s: float = 8.0
 
 
 @dataclass(slots=True)
@@ -39,7 +41,8 @@ class SceneConfig:
 class MergeConfig:
     """Rules governing whether neighbouring clips belong to one attack."""
 
-    max_gap_s: float = 25.0
+    max_gap_s: float = 8.0
+    penalty_merge_gap_s: float = 2.0
 
 
 @dataclass(slots=True)
