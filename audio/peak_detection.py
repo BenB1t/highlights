@@ -95,7 +95,7 @@ class AudioPeakDetector:
                 return np.array([], dtype=np.float32), sample_rate
 
             resampler = AudioResampler(
-                format="f32",
+                format="flt",
                 layout="mono",
                 rate=sample_rate,
             )
