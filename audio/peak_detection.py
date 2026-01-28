@@ -38,7 +38,6 @@ class AudioPeakDetector:
     def __init__(self, config: "AudioConfig") -> None:
         self.config = config
         self._last_loudness: np.ndarray | None = None
-        self._penalty_mode: bool = False
         self._logger = logging.getLogger(__name__)
 
     def detect(self, video_path: Path) -> List[PeakEvent]:
@@ -58,13 +57,7 @@ class AudioPeakDetector:
 
         low_thr, high_thr = self._compute_thresholds(loudness)
         candidates = self._find_local_maxima(loudness, low_thr, high_thr)
-        self._penalty_mode = self._detect_penalty_pattern(candidates)
-
-        gap = (
-            self.config.penalty_gap_s
-            if self._penalty_mode
-            else getattr(self.config, "open_play_gap_s", self.config.min_peak_gap_s)
-        )
+        gap = getattr(self.config, "open_play_gap_s", self.config.min_peak_gap_s)
 
         filtered = self._suppress_nearby_peaks(candidates, gap)
         return [PeakEvent(timestamp_s=c.timestamp_s, score=c.score) for c in filtered]
@@ -197,8 +190,10 @@ class AudioPeakDetector:
 
         low_thr = float(np.percentile(loudness, low_pct))
         high_thr = float(np.percentile(loudness, high_pct))
-        if np.isclose(high_thr, low_thr):
-            high_thr = low_thr + 1e-6
+        max_loudness = float(np.max(loudness)) if loudness.size else 0.0
+        min_range = 0.01 * max_loudness
+        if high_thr - low_thr < min_range:
+            high_thr = low_thr + min_range
         return low_thr, high_thr
 
     def _find_local_maxima(
@@ -237,38 +232,3 @@ class AudioPeakDetector:
 
         selected.sort(key=lambda c: c.timestamp_s)
         return selected
-
-    def _detect_penalty_pattern(
-        self, candidates: Sequence[_PeakCandidate]
-    ) -> bool:
-        """Return True when peak spacing matches typical penalty cadence."""
-
-        if len(candidates) < 4:
-            return False
-
-        timestamps = sorted(c.timestamp_s for c in candidates)
-        intervals = np.diff(timestamps)
-        if intervals.size < 3:
-            return False
-
-        lower_bound = 25.0
-        upper_bound = 50.0
-        tolerance = 6.0
-
-        run_diffs: list[float] = []
-        for interval in intervals:
-            if lower_bound <= interval <= upper_bound:
-                run_diffs.append(float(interval))
-            else:
-                if self._is_regular_penalty_run(run_diffs, tolerance):
-                    return True
-                run_diffs.clear()
-
-        if self._is_regular_penalty_run(run_diffs, tolerance):
-            return True
-        return False
-
-    def _is_regular_penalty_run(self, run: Sequence[float], tolerance: float) -> bool:
-        if len(run) < 3:
-            return False
-        return max(run) - min(run) <= tolerance

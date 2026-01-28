@@ -111,7 +111,8 @@ class PenaltyShootoutDetector:
         ranges: List[Tuple[float, float]],
     ) -> None:
         first_peak = float(timestamps[start_idx])
-        last_peak = float(timestamps[end_idx])
+        last_idx = min(end_idx, len(timestamps) - 1)
+        last_peak = float(timestamps[last_idx])
         start = max(0.0, first_peak - self.PRE_ROLL_S)
         end = min(video_duration_s, last_peak + self.POST_ROLL_S)
         ranges.append((start, end))

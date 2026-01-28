@@ -28,7 +28,11 @@ class ClipContractor:
         self.loudness = np.asarray(loudness_profile, dtype=np.float32)
         if self.loudness.ndim != 1:
             raise ValueError("loudness_profile must be 1-D")
-        self.sample_rate = max(1, int(sample_rate))
+        if int(sample_rate) != 1:
+            raise NotImplementedError(
+                "ClipContractor currently expects 1 Hz loudness profiles"
+            )
+        self.sample_rate = 1
 
     def contract(
         self, start_s: float, end_s: float, anchor_peaks: Sequence[float]

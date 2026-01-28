@@ -47,7 +47,11 @@ class SceneAligner:
                 )
             else:
                 start = self._snap_start(seg.start_s)
-                end = self._snap_end(seg.end_s, video_duration_s)
+                snapped_end = self._snap_end(seg.end_s, video_duration_s)
+                if snapped_end <= start:
+                    end = min(seg.end_s, video_duration_s or seg.end_s)
+                else:
+                    end = snapped_end
 
             if video_duration_s is not None:
                 end = min(end, video_duration_s)
@@ -69,13 +73,12 @@ class SceneAligner:
         cut_times = [b.start_s for b in boundaries]
         cut_times.append(boundaries[-1].end_s)
 
-        # Remove duplicates while preserving chronological order.
-        seen = set()
+        # Remove near-duplicates (within tolerance) while preserving order.
+        tolerance = 1e-3
         unique: List[float] = []
         for cut in cut_times:
-            if cut in seen:
+            if unique and abs(cut - unique[-1]) < tolerance:
                 continue
-            seen.add(cut)
             unique.append(cut)
         return unique
 
